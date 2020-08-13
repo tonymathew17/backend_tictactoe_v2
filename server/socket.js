@@ -1,9 +1,13 @@
+const helper = require('../utils/helper');
+
 const socketIo = require('socket.io');
 
 let moves = ['X', 'O'];
 let sockets = [];
 let firstConnectionSocketId;
 let secondConnectionSocketId;
+let winningCombinations;
+let boardSize;
 
 module.exports = server => {
     const io = socketIo(server);
@@ -32,6 +36,13 @@ module.exports = server => {
             if (socketIdIndex > -1) sockets.splice(socketIdIndex, 1);
             socket.disconnect();
         }
+
+        socket.on('boardSize', size => {
+            if (!boardSize && !winningCombinations) {
+                boardSize = size;
+                winningCombinations = helper.winningCombinations(size);
+            }
+        });
 
         socket.on('cellClicked', ({ cellId }) => {
             socket.broadcast.emit('cellClicked', { cellId });
