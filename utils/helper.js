@@ -42,7 +42,7 @@ const winningCombinations = (boardSize) => {
     return winningCombinations;
 }
 
-function checkWinner(moves, boardSize) {
+function checkWinner(moves, boardSize, winningCombinations) {
     // Finding winning combination
     if (moves.length >= boardSize) {
         let combination = winningCombinations.find(winningCombination =>
@@ -51,19 +51,19 @@ function checkWinner(moves, boardSize) {
         )
         if (combination) {
             return {
-                status: 'won',
+                status: 'You Won!',
                 winningCombination: combination
             }
         }
     }
 
-    // Check if game is tied
+/*     // Check if game is tied
     if (availableCells.length == 0) {
         return {
             status: 'tie',
             winningCombination: []
         }
-    }
+    } */
 }
 
 module.exports = {

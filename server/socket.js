@@ -8,11 +8,15 @@ let firstConnectionSocketId;
 let secondConnectionSocketId;
 let winningCombinations;
 let boardSize;
+let XMoves = [];
+let OMoves = [];
 
 module.exports = server => {
     const io = socketIo(server);
 
     io.on('connection', socket => {
+
+
         const socketId = socket.id;
         console.log(`Socket connection for ID ${socketId} established!`);
 
@@ -44,11 +48,37 @@ module.exports = server => {
             }
         });
 
-        socket.on('cellClicked', ({ cellId }) => {
-            socket.broadcast.emit('cellClicked', { cellId });
+        socket.on('cellClicked', (clickData) => {
+            const cellId = clickData.cellId;
+            const move = clickData.move;
+            let moves = [];
+            if (move === 'X') {
+                XMoves.push(cellId);
+                moves = XMoves;
+            } else if (move === 'O') {
+                OMoves.push(cellId);
+                moves = OMoves;
+            }
+            console.log(`XMoves: ${XMoves}, OMoves: ${OMoves}`)
+
+            const gameStatus = helper.checkWinner(moves, boardSize, winningCombinations);
+            if (gameStatus) {
+                socket.emit('gameResult', gameStatus.status);
+                socket.broadcast.emit('gameResult', 'You Loose!');
+            }
+            else if (XMoves.length + OMoves.length === (boardSize * boardSize)) {
+                socket.emit('gameResult', 'Tied!');
+                socket.broadcast.emit('gameResult', 'Tied!');
+            }
+            else {
+                socket.broadcast.emit('cellClicked', { cellId });
+            }
+
         });
 
         socket.on('disconnect', function () {
+            OMoves = [];
+            XMoves = [];
             const socketId = this.id;
             console.log(`Socket connection for ID ${socketId} disconnected!`);
             const socketIdIndex = sockets.indexOf(socketId);
