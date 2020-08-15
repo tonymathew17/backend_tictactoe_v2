@@ -6,7 +6,7 @@ let moves = ['X', 'O'];
 let sockets = [];
 let firstConnectionSocketId;
 let secondConnectionSocketId;
-let winningCombinations;
+let winningCombinations = [];
 let boardSize;
 let XMoves = [];
 let OMoves = [];
@@ -42,7 +42,7 @@ module.exports = server => {
         }
 
         socket.on('boardSize', size => {
-            if (!boardSize && !winningCombinations) {
+            if (!boardSize && winningCombinations.length == 0) {
                 boardSize = size;
                 winningCombinations = helper.winningCombinations(size);
             }
@@ -59,26 +59,27 @@ module.exports = server => {
                 OMoves.push(cellId);
                 moves = OMoves;
             }
-            console.log(`XMoves: ${XMoves}, OMoves: ${OMoves}`)
 
-            const gameStatus = helper.checkWinner(moves, boardSize, winningCombinations);
+            let gameStatus = helper.checkWinner(moves, boardSize, winningCombinations);
             if (gameStatus) {
-                socket.emit('gameResult', gameStatus.status);
-                socket.broadcast.emit('gameResult', 'You Loose!');
+                socket.emit('gameResult', gameStatus);
+                gameStatus.status = -1;
+                socket.broadcast.emit('gameResult', gameStatus);
             }
             else if (XMoves.length + OMoves.length === (boardSize * boardSize)) {
-                socket.emit('gameResult', 'Tied!');
-                socket.broadcast.emit('gameResult', 'Tied!');
+                gameStatus = {}
+                gameStatus.status = 0;
+                socket.emit('gameResult', gameStatus);
+                socket.broadcast.emit('gameResult', gameStatus);
             }
-            else {
-                socket.broadcast.emit('cellClicked', { cellId });
-            }
-
+            socket.broadcast.emit('cellClicked', { cellId });
         });
 
         socket.on('disconnect', function () {
             OMoves = [];
             XMoves = [];
+            winningCombinations = [];
+            boardSize = undefined;
             const socketId = this.id;
             console.log(`Socket connection for ID ${socketId} disconnected!`);
             const socketIdIndex = sockets.indexOf(socketId);
@@ -89,6 +90,9 @@ module.exports = server => {
             if (socketId == secondConnectionSocketId) opponentSocketId = firstConnectionSocketId;
 
             if (opponentSocketId) io.to(opponentSocketId).emit('errorJoining', 'Other player disconnected');
+
+            firstConnectionSocketId = undefined;
+            secondConnectionSocketId = undefined;
         });
     })
 }

@@ -51,7 +51,7 @@ function checkWinner(moves, boardSize, winningCombinations) {
         )
         if (combination) {
             return {
-                status: 'You Won!',
+                status: 1,
                 winningCombination: combination
             }
         }
